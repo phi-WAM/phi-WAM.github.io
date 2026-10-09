@@ -1,0 +1,280 @@
+% Self-contained experimental document. Bibliography: references.bib.
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{iclr2027_conference,times}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+\usepackage{url}
+\usepackage{caption}
+\usepackage{placeins}
+\captionsetup{font=small,labelfont=bf,skip=4pt}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{9pt plus 2pt minus 2pt}
+\begin{document}
+\lhead{PHI -- Experimental section}
+\setcounter{section}{3}
+% Experiment text, tables and figures.
+% Figure provenance and exact counts: figures/experiments/figure_sources.json.
+% Reported counts are preserved from the supplied Word tables.
+% Outstanding data questions are recorded in experiments_revision_notes.md.
+
+\section{Experiments}
+\label{sec:experiments}
+
+We evaluate PHI through three questions: \textbf{(1)} How does its performance compare with VLA baselines across tasks with different contact requirements? \textbf{(2)} How well does it transfer across visual conditions, robot positions, and unseen books? \textbf{(3)} What do the available representation visualizations reveal about its future-latent pathway?
+
+\subsection{Experimental Setup}
+\label{sec:experimental_setup}
+
+\paragraph{Robot platform and tasks.}
+We use a Unitree G1 humanoid with 29 degrees of freedom, two 6-DoF BrainCo dexterous hands with tactile sensing, and a head-mounted binocular RGB camera. The policy predicts $H=50$ action steps and executes them in a receding-horizon manner. ULC tracks the predicted root velocity, body height, torso, and dual-arm commands by converting them into whole-body joint targets~\cite{sun2025ulc}.
+
+Our five tasks span locomotion, object placement, and bimanual book manipulation (Fig.~\ref{fig:tasks}). Table~\ref{tab:task_characteristics} groups their contact requirements into L1 (no intentional object contact), L2 (grasping or sustained contact), and L3 (friction-regulated contact). These categories describe task requirements rather than a calibrated numerical measure of difficulty.
+
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[width=\linewidth]{figures/experiments/task_suite.pdf}
+    \caption{Real-robot task suite. Compact scene views show the five tasks in the order used for the contact-level analysis.}
+    \label{fig:tasks}
+\end{figure}
+
+\begin{table}[!tbh]
+    \centering\small
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.06}
+    \caption{Task characteristics. L1--L3 denote the contact categories defined in the text.}
+    \label{tab:task_characteristics}
+    \begin{tabular}{llcl}
+    \toprule
+    \textbf{Task} & \textbf{Level} & \textbf{Bimanual} & \textbf{Contact mode} \\
+    \midrule
+    Walk to Table & L1 & -- & No object contact \\
+    Place Bottle & L2 & -- & Grasping \\
+    Open Book & L2 & Yes & Sustained contact \\
+    Place Cube & L3 & -- & Friction regulation \\
+    Place Book Straight & L3 & Yes & Friction regulation \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{Tactile feedback.}
+Figure~\ref{fig:force_dynamics} separates the available normal-force trace from the task photographs. It illustrates changes in finger contact over a short manipulation segment. This representative trace is not an aggregate comparison across the five tasks.
+% The supplied source contains this single plotted trace, not five task logs.
+% Replace/extend it with per-task curves only when those logs are supplied.
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[width=.86\linewidth]{figures/experiments/force_trace.png}
+    \caption{Representative tactile trace during book manipulation. Normal force is shown for the middle, ring, and pinky fingers. The original time and force axes are retained; scene thumbnails are omitted.}
+    \label{fig:force_dynamics}
+\end{figure}
+
+\paragraph{Baselines and evaluation.}
+We compare PHI with $\pi_0$~\cite{black2024pi0}, $\pi_{0.5}$~\cite{black2025pi05}, and VLA-JEPA~\cite{sun2026vlajepa}. The evaluation uses the same robot platform and task definitions. The reported protocol uses 30 trials per task with randomized initial conditions. For \textit{Place Book Straight}, six table regions each contribute five trials with varied book position and orientation. For \textit{Place Bottle}, the intended allocation is ten trials each with an uncluttered target, a book beside the target, and a book beneath it.
+% Confirm JEPA's bottle-condition allocation and matched baseline training
+% settings before making stronger claims about an identical protocol.
+
+A trial is counted as successful when the complete task objective is achieved and the final state remains stable. Book manipulation additionally requires the final pose to satisfy the task-specific position and orientation tolerances. Success rates below use the reported successful-trial counts; the average pools the 150 trials for each method.
+% The source does not specify numerical pose tolerances, holding time,
+% timeout, or invalid-trial rules. These remain protocol details to confirm.
+
+\subsection{Main Results}
+\label{sec:main_results}
+
+Table~\ref{tab:main_results} reports the five-task results. PHI succeeds in 123 of 150 trials ($82.0\%$), compared with 88 of 150 ($58.7\%$) for the strongest baseline on average, $\pi_0$: an absolute gain of \textbf{23.3 percentage points}. PHI, $\pi_0$, and $\pi_{0.5}$ all achieve $100\%$ on \textit{Walk to Table}. Across the four object-manipulation tasks, PHI achieves $70.0$--$86.7\%$ and has the highest reported success rate in each task.
+
+\begin{table}[!tbh]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.13}
+\caption{Success rates (\%) on the real robot. Parentheses show successful trials out of 30 per task. Bold marks the column best; the green value is the gain over the strongest baseline average in percentage points.}
+\label{tab:main_results}
+\begin{tabular}{lccccc c}
+\toprule
+\textbf{Method} & \shortstack{\textbf{Walk to}\\\textbf{Table}} & \shortstack{\textbf{Place}\\\textbf{Bottle}} & \shortstack{\textbf{Open}\\\textbf{Book}} & \shortstack{\textbf{Place}\\\textbf{Cube}} & \shortstack{\textbf{Place Book}\\\textbf{Straight}} & \textbf{Avg.} \\
+\midrule
+\shortstack[l]{$\pi_{0.5}$\\{\scriptsize\citep{black2025pi05}}} & \shortstack{\textbf{100.0}\\{\scriptsize(30/30)}} & \shortstack{10.0\\{\scriptsize(3/30)}} & \shortstack{46.7\\{\scriptsize(14/30)}} & \shortstack{36.7\\{\scriptsize(11/30)}} & \shortstack{43.3\\{\scriptsize(13/30)}} & 47.3 \\
+\shortstack[l]{$\pi_0$\\{\scriptsize\citep{black2024pi0}}} & \shortstack{\textbf{100.0}\\{\scriptsize(30/30)}} & \shortstack{66.7\\{\scriptsize(20/30)}} & \shortstack{50.0\\{\scriptsize(15/30)}} & \shortstack{40.0\\{\scriptsize(12/30)}} & \shortstack{36.7\\{\scriptsize(11/30)}} & 58.7 \\
+\shortstack[l]{VLA-JEPA\\{\scriptsize\citep{sun2026vlajepa}}} & \shortstack{6.7\\{\scriptsize(2/30)}} & \shortstack{0.0\\{\scriptsize(0/30)}} & \shortstack{0.0\\{\scriptsize(0/30)}} & \shortstack{0.0\\{\scriptsize(0/30)}} & \shortstack{0.0\\{\scriptsize(0/30)}} & 1.3 \\
+\midrule
+\rowcolor{gray!15}
+\textbf{PHI (Ours)} & \shortstack{\textbf{100.0}\\{\scriptsize(30/30)}} & \shortstack{\textbf{76.7}\\{\scriptsize(23/30)}} & \shortstack{\textbf{86.7}\\{\scriptsize(26/30)}} & \shortstack{\textbf{70.0}\\{\scriptsize(21/30)}} & \shortstack{\textbf{76.7}\\{\scriptsize(23/30)}} & \shortstack{\textbf{82.0}\\{\color{green!45!black}\scriptsize\textbf{(+23.3)}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Contact-level comparison.}
+Figure~\ref{fig:contact_gain} compares PHI's absolute gains over $\pi_0$ and $\pi_{0.5}$ across the five tasks. Both comparisons show zero gain on locomotion and positive gains on all four manipulation tasks. The largest gains are 40.0 percentage points on book straightening relative to $\pi_0$ and 66.7 points on bottle placement relative to $\pi_{0.5}$; neither curve increases monotonically with contact level.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=.82\linewidth]{figures/experiments/gain_over_pi0.pdf}
+    \caption{Absolute success-rate gains of PHI over $\pi_0$ and $\pi_{0.5}$ (percentage points).}
+    \label{fig:contact_gain}
+\end{figure}
+
+\paragraph{Bimanual manipulation.}
+Opening a book requires one hand to lift the cover while the other stabilizes the book. PHI achieves $86.7\%$, compared with $50.0\%$ for $\pi_0$ and $46.7\%$ for $\pi_{0.5}$. Book straightening requires changing the book's position and orientation from different initial configurations; PHI reaches $76.7\%$, compared with $36.7\%$ and $43.3\%$, respectively. These results establish a performance advantage on the evaluated tasks, while component-level explanations require the ablations in Sec.~\ref{sec:ablations}.
+
+\paragraph{Qualitative execution.}
+Figure~\ref{fig:qualitative_execution} shows selected book-manipulation sequences. The straightening examples show the hands contacting and repositioning books with different appearances; the opening example shows cover lifting and the resulting open configuration. Timestamps preserve the progression within each recorded clip. These examples illustrate the behaviors and complement the trial-count evaluation; they do not establish success rates or identify the causal contribution of a model component.
+
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[width=\linewidth]{figures/experiments/qualitative_execution.pdf}
+    \caption{Selected PHI execution sequences. (a,b) Book straightening with two books. (c) Opening a book cover. Each row comes from one video, with a fixed crop across the row and timestamps in seconds. Frames are ordered chronologically.}
+    \label{fig:qualitative_execution}
+\end{figure}
+
+VLA-JEPA has a reported average of $1.3\%$ in this evaluation. Given this low result, conclusions about that baseline should remain specific to the evaluated implementation and conditions; these scores alone do not explain the failure mechanism.
+
+\subsection{Generalization across Visual and Spatial Conditions}
+\label{sec:generalization}
+
+\paragraph{Visual distractors.}
+For \textit{Place Book Straight}, distractors change the scene around the target while retaining the manipulation objective. Figure~\ref{fig:generalization_clutter} groups the methods by evaluation setting and pairs the results with compact scene views. The reported PHI rate is $70.0\%$ (7/10), versus $30.0\%$ (3/10) for $\pi_0$ and $10.0\%$ (1/10) for $\pi_{0.5}$. PHI's reported rate drops by 6.7 percentage points from the standard setting.
+% Source reconciliation: PHI clutter has 7 successes in an 11-character
+% bit string but is summarized as 7/10. Retain the supplied aggregate.
+
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[width=.88\linewidth]{figures/experiments/generalization_clutter.pdf}
+    \caption{Visual distractors on \textit{Place Book Straight}. Bars are grouped into the in-domain and clutter settings, with a consistent color for each method. Below: one in-domain scene and three clutter examples. The clutter group pools its scene conditions; there is no per-image success-rate estimate.}
+    \label{fig:generalization_clutter}
+\end{figure}
+
+\paragraph{Unseen books.}
+We evaluate three held-out books with different cover appearances, thicknesses, and material properties, including a softcover book. Each book contributes ten trials for both \textit{Place Book Straight} and \textit{Open Book}. On straightening, PHI achieves $60.0\%$ (18/30), compared with $30.0\%$ (9/30) for $\pi_{0.5}$ and $23.3\%$ (7/30) for $\pi_0$. On opening, PHI achieves $56.7\%$ (17/30), while both baselines achieve $33.3\%$ (10/30). The respective gains over the strongest baseline in each task are 30.0 and 23.3 percentage points.
+% Source reconciliation: PHI straightening / Federated Learning has 6
+% successes in a 13-character bit string but is summarized as 6/10.
+
+Figure~\ref{fig:generalization_books} separates this object-level evaluation from visual clutter. PHI retains an aggregate advantage on both tasks, but performance is lower than on the training-domain books. The results support transfer to these evaluated books, rather than robustness to every appearance or contact-property change.
+
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[width=\linewidth]{figures/experiments/generalization_books.pdf}
+    \caption{Generalization to unseen books, shown separately for (a) straightening and (b) opening. Every bar aggregates 30 trials. Each task panel shows one seen-book scene and three held-out books: \textit{Linear Algebra Done Right}, \textit{Federated Learning}, and \textit{Deep Learning}, from left to right.}
+    \label{fig:generalization_books}
+\end{figure}
+
+
+\paragraph{Lighting and robot-position changes.}
+Table~\ref{tab:additional_conditions} includes the reported lighting and robot-position evaluations for book straightening. Across the two lighting settings, PHI and $\pi_{0.5}$ each succeed in 8/20 trials, compared with 7/20 for $\pi_0$. Across left and right robot positions, PHI succeeds in 14/20 trials, compared with 10/20 and 9/20. The six table-region rows further show the distribution of the standard 30-trial result, with PHI succeeding in 3--5 of five trials per region; these rows are a breakdown of the main evaluation, not additional trials.
+
+\begin{table}[!tbh]
+\centering\small
+\setlength{\tabcolsep}{7pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Book-straightening condition breakdown. Entries are successful/total trials from the supplied summary. The six table regions partition the standard 30 trials.}
+\label{tab:additional_conditions}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Condition} & \textbf{PHI} & $\pi_{0.5}$ & $\pi_0$ \\
+\midrule
+Bright lighting & 5/10 & 4/10 & 3/10 \\
+Dim lighting & 3/10 & 4/10 & 4/10 \\
+\rowcolor{gray!10} Lighting total & 8/20 & 8/20 & 7/20 \\
+Robot position: left & 8/10 & 4/10 & 4/10 \\
+Robot position: right & 6/10 & 6/10 & 5/10 \\
+\rowcolor{gray!10} Robot-position total & 14/20 & 10/20 & 9/20 \\
+\midrule
+Table region: left & 4/5 & 3/5 & 1/5 \\
+Table region: upper left & 4/5 & 1/5 & 2/5 \\
+Table region: upper middle & 4/5 & 3/5 & 2/5 \\
+Table region: middle & 3/5 & 2/5 & 3/5 \\
+Table region: upper right & 5/5 & 2/5 & 1/5 \\
+Table region: right & 3/5 & 2/5 & 2/5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Object and scene breakdowns.}
+Table~\ref{tab:object_breakdown} reports the individual book and bottle-scene results underlying the aggregate comparisons. PHI straightens each unseen book in 6/10 trials, while opening success varies from 4/10 to 8/10. In particular, $\pi_{0.5}$ performs better on opening \textit{Linear Algebra Done Right}; PHI's aggregate advantage therefore does not imply an advantage on every book. For bottle placement, PHI achieves 9/10, 8/10, and 6/10 successes across the three recorded scenes. The bottle rows partition the 30 trials in Table~\ref{tab:main_results}.
+
+\begin{table}[!tbh]
+\centering\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Per-book and bottle-scene results (successful/total trials). These are breakdowns of the reported aggregates, using the supplied summary counts.}
+\label{tab:object_breakdown}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Task / condition} & \textbf{PHI} & $\pi_{0.5}$ & $\pi_0$ \\
+\midrule
+\multicolumn{4}{l}{\textit{Place Book Straight: unseen books}} \\
+Linear Algebra Done Right & 6/10 & 2/10 & 2/10 \\
+Federated Learning & 6/10 & 4/10 & 3/10 \\
+Deep Learning & 6/10 & 3/10 & 2/10 \\
+\midrule
+\multicolumn{4}{l}{\textit{Open Book: unseen books}} \\
+Linear Algebra Done Right & 4/10 & 6/10 & 5/10 \\
+Federated Learning & 8/10 & 1/10 & 5/10 \\
+Deep Learning & 5/10 & 3/10 & 0/10 \\
+\midrule
+\multicolumn{4}{l}{\textit{Place Bottle: scene conditions}} \\
+Uncluttered target & 9/10 & 0/10 & 7/10 \\
+Book beside target & 8/10 & 0/10 & 6/10 \\
+Book beneath target & 6/10 & 3/10 & 7/10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablations and Future-Representation Analysis}
+\label{sec:ablations}
+
+\paragraph{Component ablations.}
+Table~\ref{tab:ablations} lists four component comparisons on the two book tasks: removing force conditioning, the predictive future latent, multi-head action projection, or state projection. Full-model scores provide the reference; variant scores remain unreported. The tactile trace, execution sequences, latent comparison, and attention maps provide complementary observations of the complete system.
+
+\begin{table}[!tbh]
+    \centering\small
+    \setlength{\tabcolsep}{7pt}
+    \renewcommand{\arraystretch}{1.06}
+    \caption{Component ablations on the two book tasks (success rate, \%). A dash denotes an unreported result, not zero success.}
+    \label{tab:ablations}
+    \begin{tabular}{lcc}
+    \toprule
+    \textbf{Variant} & \shortstack{\textbf{Place Book}\\\textbf{Straight}} & \textbf{Open Book} \\
+    \midrule
+    \rowcolor{gray!15} PHI & 76.7 & 86.7 \\
+    w/o force conditioning & -- & -- \\
+    w/o predictive future latent & -- & -- \\
+    w/o multi-head action projection & -- & -- \\
+    w/o state projection & -- & -- \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{Single-frame latent alignment.}
+Figure~\ref{fig:latent_analysis} compares the predicted future latent with the target obtained from the actual future observations for one exported frame. Both have 512 query tokens and 2048 channels. Recomputing from the exported tensors gives mean squared error $0.06320$ and mean token-wise cosine similarity $0.96900$. The heatmaps use the same color scale and average each consecutive group of 16 channels for display. Error is evaluated in the original 2048-dimensional space. Panel (d) jointly projects the predicted and target tokens onto a shared PCA basis fitted to their concatenation. Lines connect matching queries; colors show original-space MSE. Axis labels report explained variance, and line lengths indicate distances only in the two-dimensional projection.
+
+The query axis is a learned token index, not an image coordinate or a temporal trajectory. This example demonstrates alignment for one current frame; it does not establish similar temporal evolution across contact, sliding, and stopping phases, or an aggregate prediction accuracy over trials.
+
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[width=.92\linewidth]{figures/experiments/latent_alignment.pdf}
+    \caption{Single-frame future-latent comparison at frame 2000. (a,b) Predicted and target representations with shared color limits, clipped at the pooled absolute-value 99.5th percentile. (c) MSE for each query in the original feature space. (d) Joint PCA of predicted and target tokens, with paired queries connected and predictions colored by original-space MSE. The target uses five future stereo observations.}
+    \label{fig:latent_analysis}
+\end{figure}
+
+\paragraph{Attention of the future-target extractor.}
+Figure~\ref{fig:attention_analysis} shows the final-layer Perceiver attention averaged over the 512 learned queries. The selected future offsets are 10, 30, and 50 frames, corresponding to approximately 0.33, 1.00, and 1.67 seconds at the source rate of 30 fps. The stereo views show how attention is distributed over the scene, including the book and interacting hands. A shared scale across the panels preserves the interpretation of attention intensity.
+
+These maps belong to the teacher's future-target extraction pathway, which consumes actual future images. They are not attention maps of the deployed action prediction network and should not be interpreted as online access to future observations. They provide a qualitative view of the target representation, while the missing ablation results remain necessary to assess its contribution to policy performance.
+
+\begin{figure}[!tbh]
+    \centering
+    \includegraphics[width=.90\linewidth]{figures/experiments/perceiver_attention.pdf}
+    \caption{Final-layer teacher/Perceiver attention on left and right future images. Each time offset pairs the original image with its attention overlay. Intensities share a 99.5th-percentile normalization over all five future times and both cameras; values above that scale are clipped.}
+    \label{fig:attention_analysis}
+\end{figure}
+\FloatBarrier
+\begingroup
+\footnotesize
+\setlength{\bibsep}{2pt}
+\bibliography{references}
+\bibliographystyle{iclr2027_conference}
+\endgroup
+\end{document}

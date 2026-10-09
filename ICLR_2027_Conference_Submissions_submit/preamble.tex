@@ -1,0 +1,31 @@
+\usepackage[T1]{fontenc}
+\usepackage{iclr2027_conference,times}
+\usepackage{amsmath,amssymb,booktabs,multirow,graphicx,array,longtable}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{hyperref}
+\usepackage{xurl}
+\hypersetup{hidelinks,pdftitle={Geometry-Aware Feature Fusion for Open-Vocabulary 3D Segmentation},pdfauthor={Anonymous}}
+\ifdefined\pdfminorversion
+  \pdfminorversion=7
+\else
+  \special{pdf:minorversion 7}
+\fi
+\newcommand{\method}{GAFF}
+\newcommand{\norm}[1]{\operatorname{norm}\!\left(#1\right)}
+\newcommand{\IoU}{\operatorname{IoU}}
+\newcommand{\ind}{\mathbb{1}}
+\providecommand{\tightlist}{\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+\newsavebox{\egrtablebox}
+\newlength{\egrtablewidth}
+\newcommand{\egrtablescale}{1}
+\newenvironment{egrcompacttable}
+  {\begin{lrbox}{\egrtablebox}\small}
+  {\end{lrbox}%
+   \ifdim\wd\egrtablebox>\linewidth
+     \resizebox{\linewidth}{!}{\usebox{\egrtablebox}}%
+   \else
+     \usebox{\egrtablebox}%
+   \fi}
+\input{appendix_order.tex}

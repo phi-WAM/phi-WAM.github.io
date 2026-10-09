@@ -1,0 +1,203 @@
+% phi_pseudocode.tex
+%王天虹 第一版
+% In the main paper, load this file in the preamble with:
+%   \input{phi_pseudocode.tex}
+%
+% and place:
+%   \PHIPseudocode
+% where the algorithm should appear.
+
+\RequirePackage{algorithm}
+\RequirePackage{algpseudocode}
+
+\newcommand{\PHIPseudocode}{%
+\begin{algorithm}[t]
+\caption{Progressive Training and Causal Inference of PHI}
+\label{alg:phi}
+\footnotesize
+\begin{algorithmic}[1]
+
+\Require Demonstrations $\mathcal{D}$, future offsets
+$\{\Delta_m\}_{m=1}^{M}$, force-history length $K$
+\Ensure Trained causal policy $\pi$
+
+% ============================================================
+\Statex
+\Statex \textbf{Stage I: Exploit privileged future information}
+
+\For{each minibatch
+$(I_t,\ell,s_t,F_{t-K+1:t},A_t^1,
+\{I_{t+\Delta_m}\}_{m=1}^{M}) \sim \mathcal{D}$}
+
+    \State $Z_t^{vl}
+    \gets
+    \operatorname{VLM}_{\bar{\omega}}(I_t,\ell)$
+
+    \State $Z_t^{+}
+    \gets
+    R_{\psi}\!\left(
+    E_v(I_{t+\Delta_1}),\ldots,E_v(I_{t+\Delta_M})
+    \right)$
+
+    \State $z_t^f
+    \gets
+    E_f\!\left(\phi(F_{t-K+1:t})\right)$,
+    \quad
+    $z_t^s \gets E_s(s_t)$
+
+    \State Sample $A_t^0 \sim \mathcal{N}(0,I)$
+    and $\tau \sim \mathcal{U}(0,1)$
+
+    \State $A_t^\tau
+    \gets
+    (1-\tau)A_t^0+\tau A_t^1$,
+    \quad
+    $u_t \gets A_t^1-A_t^0$
+
+    \State $\widehat{u}_t
+    \gets
+    G_{\theta}\!\left(
+    A_t^\tau,\tau,
+    Z_t^{vl},Z_t^{+},z_t^f,z_t^s
+    \right)$
+
+    \State $\mathcal{L}_{\mathrm{act}}
+    \gets
+    \left\|
+    \widehat{u}_t-u_t
+    \right\|_2^2$
+
+    \State Update $\psi$, $E_f$, $E_s$, and $\theta$
+    using $\mathcal{L}_{\mathrm{act}}$
+
+\EndFor
+
+% ============================================================
+\Statex
+\Statex \textbf{Stage II: Predict action-grounded future information}
+
+\State Freeze all modules except $\operatorname{VLM}_{\omega}$
+
+\For{each minibatch
+$(I_t,\ell,\{I_{t+\Delta_m}\}_{m=1}^{M})
+\sim\mathcal{D}$}
+
+    \State $Z_t^{+}
+    \gets
+    R_{\psi}\!\left(
+    E_v(I_{t+\Delta_1}),\ldots,E_v(I_{t+\Delta_M})
+    \right)$
+
+    \State $(Z_t^{vl},\widehat{Z}_t^{+})
+    \gets
+    \operatorname{VLM}_{\omega}(I_t,\ell)$
+
+    \State $\mathcal{L}_{\mathrm{future}}
+    \gets
+    \left\|
+    \widehat{Z}_t^{+}
+    -
+    \operatorname{sg}(Z_t^{+})
+    \right\|_2^2$
+
+    \State Update $\omega$
+    using $\mathcal{L}_{\mathrm{future}}$
+
+\EndFor
+
+% ============================================================
+\Statex
+\Statex \textbf{Stage III: Align future prediction with action generation}
+
+\State Unfreeze $\operatorname{VLM}_{\omega}$,
+$E_f$, $E_s$, and $G_{\theta}$
+\State Keep $R_{\psi}$ and $E_v$ frozen;
+discard explicit future-latent supervision
+
+\For{each minibatch
+$(I_t,\ell,s_t,F_{t-K+1:t},A_t^1)
+\sim\mathcal{D}$}
+
+    \State $(Z_t^{vl},\widehat{Z}_t^{+})
+    \gets
+    \operatorname{VLM}_{\omega}(I_t,\ell)$
+
+    \State $z_t^f
+    \gets
+    E_f\!\left(\phi(F_{t-K+1:t})\right)$,
+    \quad
+    $z_t^s \gets E_s(s_t)$
+
+    \State Sample $A_t^0 \sim \mathcal{N}(0,I)$
+    and $\tau \sim \mathcal{U}(0,1)$
+
+    \State $A_t^\tau
+    \gets
+    (1-\tau)A_t^0+\tau A_t^1$,
+    \quad
+    $u_t \gets A_t^1-A_t^0$
+
+    \State $\widehat{u}_t
+    \gets
+    G_{\theta}\!\left(
+    A_t^\tau,\tau,
+    Z_t^{vl},\widehat{Z}_t^{+},z_t^f,z_t^s
+    \right)$
+
+    \State $\mathcal{L}_{\mathrm{act}}
+    \gets
+    \left\|
+    \widehat{u}_t-u_t
+    \right\|_2^2$
+
+    \State Jointly update $\omega$, $E_f$, $E_s$, and $\theta$
+    using $\mathcal{L}_{\mathrm{act}}$
+
+\EndFor
+
+% ============================================================
+\Statex
+\Statex \textbf{Causal inference}
+
+\For{each control step $t$}
+
+    \State $(Z_t^{vl},\widehat{Z}_t^{+})
+    \gets
+    \operatorname{VLM}_{\omega}(I_t,\ell)$
+
+    \State $z_t^f
+    \gets
+    E_f\!\left(\phi(F_{t-K+1:t})\right)$,
+    \quad
+    $z_t^s \gets E_s(s_t)$
+
+    \State Sample $A_t^{\tau_0} \sim \mathcal{N}(0,I)$,
+    where $\tau_0=0$
+
+    \For{$n=0,\ldots,N-1$}
+
+        \State $\widehat{u}_t^{\,n}
+        \gets
+        G_{\theta}\!\left(
+        A_t^{\tau_n},\tau_n,
+        Z_t^{vl},\widehat{Z}_t^{+},z_t^f,z_t^s
+        \right)$
+
+        \State $A_t^{\tau_{n+1}}
+        \gets
+        A_t^{\tau_n}
+        +
+        (\tau_{n+1}-\tau_n)\widehat{u}_t^{\,n}$
+
+    \EndFor
+
+    \State $A_t \gets A_t^{\tau_N}$
+
+    \State Execute the first action(s) of $A_t$
+    and update the observation history
+
+\EndFor
+
+\end{algorithmic}
+\end{algorithm}%
+}
